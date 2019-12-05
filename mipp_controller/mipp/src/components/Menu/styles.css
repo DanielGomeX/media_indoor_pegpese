@@ -1,0 +1,66 @@
+nav#wrap_menu{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    position: relative;
+    top: -5%;
+    background: rgb(243,243,243);
+    background: radial-gradient(circle, rgba(220,220,220,1) 0%, rgba(243,243,243,1) 35%, rgba(255,255,255,1) 100%);
+    border-bottom:3px solid #ffffff;
+    color: black;
+}
+
+nav#wrap_menu ul {
+    padding:0px;
+    margin:0px;
+    list-style:none;
+    letter-spacing: -.05rem;  
+    text-transform: uppercase;
+}
+
+nav#wrap_menu ul li{
+    display: inline-block;
+    padding: 10px 10px;
+    font-size: 17px;
+}
+
+li[name="register"]{    
+    border-right:3px solid #EDEDED;
+}
+
+span, a{
+    text-decoration: none !important;
+    color: #323232 !important;;
+    font-weight: bold !important;;
+}
+
+li:hover, a:hover{    
+    color: #ffffff;    
+    text-decoration: none;
+    background: rgb(185, 185, 185);
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 41px;
+    background-color: #EDEDED;
+    min-width: 160px;
+    box-shadow: 0px 8px 11px -4px rgba(0,0,0,0.25);
+    z-index: 1;
+    font-size: 17px;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 10px 10px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {background-color: rgb(185, 185, 185);}
+
+.dropdown:hover .dropdown-content {display: block;}
+
+.dropdown:hover .dropbtn {background-color: #3e8e41;}
