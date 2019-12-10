@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AsyncStorage, Image, ImageBackground , Text, StyleSheet, SafeAreaView, FlatList, StatusBar } from 'react-native';
+import { AsyncStorage, Image, ImageBackground , Text, StyleSheet, SafeAreaView, FlatList, StatusBar, NetInfo } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { Video } from 'expo-av';
 import { Col, Row, Grid } from "react-native-easy-grid";
@@ -13,6 +13,14 @@ export default function ImageScreen(){
     const [screen, setScreen] = useState({});
     const [products, setProducts] = useState([]);
     const [changeScreen, setChangeScreen] = useState(0);
+
+    state = {
+        isConnected: true
+    };
+
+    handleConnectivityChange = isConnected => {
+        this.setState({ isConnected });
+    };
 
     useEffect(() => {        
         async function loadBackground(){            
@@ -34,9 +42,10 @@ export default function ImageScreen(){
         }
 
         loadBackground();
+        NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
     }, []);
             
-    async function loadMedia(media_id, shop_id, depto_id){ 
+    async function loadMedia(media_id, shop_id, depto_id){
         await setAdMedia('');  
         const response = await api.get(`/mediaInfo/${media_id}`);
         var name = `${shop_id}_${depto_id}_${media_id}_${response.data.media_version}`;
@@ -57,23 +66,34 @@ export default function ImageScreen(){
     async function loadScreen(){
         const shop = await AsyncStorage.getItem('selectedShop');
         const departament = await AsyncStorage.getItem('selectedDepartament');
-        await api.get(`/screens/${shop}/${departament}`).then(async (response) => {        
-            let arr = await Object.keys(response.data[changeScreen].products).map((k) => response.data[changeScreen].products[k]);
-            await setProducts(arr); 
-            await setScreen(response.data[changeScreen]);
-            await loadMedia(response.data[changeScreen].media_id, shop, departament);
-            await sleep(response.data[changeScreen].timer * 1000);
-            if(changeScreen == response.data.length - 1){
-                await setChangeScreen(0);
-            } else {
-                await setChangeScreen(changeScreen + 1);
-            }
-        }).catch(error => {
-            if (!error.status) {
-                loadScreen();
-                setChangeScreen(0);
-            }
-        });
+        if (this.state.isConnected){
+            await api.get(`/screens/${shop}/${departament}`).then(async (response) => {
+                if(response.status != 200){
+                    throw Error;
+                } else {
+                    let arr = await Object.keys(response.data[changeScreen].products).map((k) => response.data[changeScreen].products[k]);
+                    await setProducts(arr); 
+                    await setScreen(response.data[changeScreen]);
+                    await loadMedia(response.data[changeScreen].media_id, shop, departament);
+                    await sleep(response.data[changeScreen].timer * 1000);
+                    if(changeScreen == response.data.length - 1){
+                        await setChangeScreen(0);
+                    } else {
+                        await setChangeScreen(changeScreen + 1);
+                    }
+                }
+            }).catch(async (error) => {
+                if(error){
+                    await sleep(60000);
+                    loadScreen();
+                    setChangeScreen(0);
+                }
+            });
+        } else{
+            await sleep(60000);
+            loadScreen();
+            setChangeScreen(0);
+        }
     }
     
     useEffect(() => { 
