@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { AsyncStorage, Image, ImageBackground , Text, StyleSheet, SafeAreaView, FlatList, StatusBar, NetInfo } from 'react-native';
+import { AsyncStorage, Image, ImageBackground , Text, StyleSheet, SafeAreaView, FlatList, StatusBar, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { Video } from 'expo-av';
 import { Col, Row, Grid } from "react-native-easy-grid";
+import NetInfo from "@react-native-community/netinfo";
 
 import api from '../services/api';
 
@@ -13,16 +14,9 @@ export default function ImageScreen(){
     const [screen, setScreen] = useState({});
     const [products, setProducts] = useState([]);
     const [changeScreen, setChangeScreen] = useState(0);
+    var connection = true;
 
-    state = {
-        isConnected: true
-    };
-
-    handleConnectivityChange = isConnected => {
-        this.setState({ isConnected });
-    };
-
-    useEffect(() => {        
+    useEffect(() => {  
         async function loadBackground(){            
             const shop = await AsyncStorage.getItem('selectedShop');
             const departament = await AsyncStorage.getItem('selectedDepartament');
@@ -40,11 +34,9 @@ export default function ImageScreen(){
                 await setBackground(saveImage.uri);
             }
         }
-
         loadBackground();
-        NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectivityChange);
     }, []);
-            
+
     async function loadMedia(media_id, shop_id, depto_id){
         await setAdMedia('');  
         const response = await api.get(`/mediaInfo/${media_id}`);
@@ -64,9 +56,19 @@ export default function ImageScreen(){
     }
 
     async function loadScreen(){
-        const shop = await AsyncStorage.getItem('selectedShop');
-        const departament = await AsyncStorage.getItem('selectedDepartament');
-        if (this.state.isConnected){
+        await NetInfo.fetch().then(async (state) => {
+                connection = state.isConnected;
+                if(!state.isConnected){
+                    await sleep(60000);
+                    await setChangeScreen(0);
+                    loadScreen();
+                    return;
+                }
+        });
+        
+        if (connection){
+            const shop = await AsyncStorage.getItem('selectedShop');
+            const departament = await AsyncStorage.getItem('selectedDepartament');
             await api.get(`/screens/${shop}/${departament}`).then(async (response) => {
                 if(response.status != 200){
                     throw Error;
@@ -85,18 +87,14 @@ export default function ImageScreen(){
             }).catch(async (error) => {
                 if(error){
                     await sleep(60000);
+                    await setChangeScreen(0);
                     loadScreen();
-                    setChangeScreen(0);
                 }
             });
-        } else{
-            await sleep(60000);
-            loadScreen();
-            setChangeScreen(0);
         }
     }
     
-    useEffect(() => { 
+    useEffect(() => {
         loadScreen();
     }, [changeScreen]);
 
@@ -158,7 +156,7 @@ export default function ImageScreen(){
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-}  
+}
 
 const style = StyleSheet.create({
     container: {
